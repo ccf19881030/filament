@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "AtlasGenerator.h"
+#include <gltfio/MeshPipeline.h>
 
 #include <utils/Path.h>
 
@@ -24,11 +24,8 @@
 #include <iostream>
 #include <string>
 
-#define CGLTF_IMPLEMENTATION
-#define CGLTF_WRITE_IMPLEMENTATION
-#include "cgltf_write.h"
-
-static bool g_discardTextures = false;
+static uint8_t g_flattenFlags = gltfio::MeshPipeline::FILTER_TRIANGLES;
+static bool g_flattenOnly = true;
 
 static const char* USAGE = R"TXT(
 ATLASGEN consumes a glTF 2.0 file and produces a new glTF file that adds a new UV set to each mesh
@@ -95,7 +92,7 @@ static int handleArguments(int argc, char* argv[]) {
                 license();
                 exit(0);
             case 'd':
-                g_discardTextures = true;
+                g_flattenFlags |= gltfio::MeshPipeline::DISCARD_TEXTURES;
         }
     }
 
@@ -141,46 +138,27 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Peek at the file size to allow pre-allocation.
-    long contentSize = static_cast<long>(getFileSize(inputPath.c_str()));
-    if (contentSize <= 0) {
-        std::cerr << "Unable to open " << inputPath << std::endl;
-        exit(1);
-    }
-
-    // Consume the glTF file.
-    std::ifstream in(inputPath.c_str(), std::ifstream::in);
-    std::vector<uint8_t> buffer(static_cast<unsigned long>(contentSize));
-    if (!in.read((char*) buffer.data(), contentSize)) {
+    // Import the glTF file.
+    gltfio::MeshPipeline pipeline;
+    gltfio::MeshPipeline::AssetHandle asset = pipeline.load(inputPath);
+    if (!asset) {
         std::cerr << "Unable to read " << inputPath << std::endl;
         exit(1);
     }
 
-    // Parse the glTF file.
-    cgltf_options options { cgltf_file_type_gltf };
-    cgltf_data* inputAsset;
-    cgltf_result result = cgltf_parse(&options, buffer.data(), buffer.size(), &inputAsset);
-    if (result != cgltf_result_success) {
-        std::cerr << "Error parsing glTF file." << std::endl;
-        return 1;
+    // Flatten the mesh structure: bake out transforms, etc.
+    asset = pipeline.flatten(asset, g_flattenFlags);
+
+    // Generate atlases.
+    #if 0
+    if (!g_flattenOnly) {
+        asset = pipeline.parameterize(asset);
     }
+    #endif
 
-    // Load external resources.
-    utils::Path inputFolder = inputPath.getParent();
-    result = cgltf_load_buffers(&options, inputAsset, inputFolder.c_str());
-    if (result != cgltf_result_success) {
-        std::cerr << "Error loading glTF resources." << std::endl;
-        return 1;
-    }
-
-    // Generate the atlas.
-    AtlasGenerator generator(inputAsset);
-    generator.setDiscardTextures(g_discardTextures);
-    generator.execute();
-
-    // Write out the result.
-    const cgltf_data* outputAsset = generator.getResult();
-    cgltf_write_file(&options, outputPath.c_str(), outputAsset);
-    std::cout << "Generated " << outputPath << std::endl;
-    cgltf_free(inputAsset);
+    // Export the JSON and BIN files.
+    std::string binFilename = outputPath.getNameWithoutExtension() + ".bin";
+    utils::Path binFullpath = outputPath.getParent() + binFilename;
+    pipeline.save(asset, outputPath, binFullpath);
+    std::cout << "Generated " << outputPath << " and " << binFullpath << std::endl;
 }

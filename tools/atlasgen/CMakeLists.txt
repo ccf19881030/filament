@@ -6,16 +6,13 @@ set(TARGET atlasgen)
 # ==================================================================================================
 # Source files
 # ==================================================================================================
-set(SRCS
-    src/main.cpp
-    src/AtlasGenerator.h
-    src/AtlasGenerator.cpp)
+set(SRCS src/main.cpp)
 
 # ==================================================================================================
 # Target definitions
 # ==================================================================================================
 add_executable(${TARGET} ${SRCS})
-target_link_libraries(${TARGET} PRIVATE utils getopt xatlas cgltf math)
+target_link_libraries(${TARGET} PRIVATE utils getopt gltfio math)
 
 # =================================================================================================
 # Licenses
