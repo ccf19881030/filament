@@ -347,6 +347,7 @@ static void cgltf_write_node(cgltf_write_context* context, const cgltf_node* nod
 	cgltf_write_line(context, "{");
 	cgltf_write_idxarrprop("children", node->children_count, node->children, context->data->nodes);
 	cgltf_write_idxprop("mesh", node->mesh, context->data->meshes);
+	cgltf_write_strprop(context, "name", node->name);
 	if (node->has_matrix)
 	{
 		cgltf_write_floatarrprop(context, "matrix", node->matrix, 16);
