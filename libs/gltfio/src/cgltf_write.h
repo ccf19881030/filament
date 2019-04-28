@@ -236,13 +236,13 @@ static void cgltf_write_primitive(cgltf_write_context* context, const cgltf_prim
 	cgltf_write_intprop(context, "mode", (int) prim->type, 4);
 	cgltf_write_idxprop("indices", prim->indices, context->data->accessors);
 	cgltf_write_idxprop("material", prim->material, context->data->materials);
-	cgltf_write_line(context, "\"attributes\": [");
+	cgltf_write_line(context, "\"attributes\": {");
 	for (cgltf_size i = 0; i < prim->attributes_count; ++i)
 	{
 		const cgltf_attribute* attr = prim->attributes + i;
 		cgltf_write_idxprop(attr->name, attr->data, context->data->accessors);
 	}
-	cgltf_write_line(context, "]");
+	cgltf_write_line(context, "}");
 
 	// TODO: prim->targets
 }
