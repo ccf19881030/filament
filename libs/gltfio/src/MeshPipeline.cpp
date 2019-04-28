@@ -461,7 +461,7 @@ void MeshPipeline::save(AssetHandle handle, const utils::Path& jsonPath,
         const utils::Path& binPath) {
     cgltf_data* asset = (cgltf_data*) handle;
 
-    if (isFlattened(asset)) {
+    if (!isFlattened(asset)) {
         utils::slog.e << "Only flattened assets can be exported to disk." << utils::io::endl;
         return;
     }

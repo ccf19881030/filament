@@ -99,7 +99,7 @@ static void cgltf_write_strprop(cgltf_write_context* context, const char* label,
 	if (val)
 	{
 		cgltf_write_indent(context);
-		fprintf(context->file, "'%s': '%s'", label, val);
+		fprintf(context->file, "\"%s\": \"%s\"", label, val);
 		context->needs_comma = 1;
 	}
 }
@@ -109,7 +109,7 @@ static void cgltf_write_intprop(cgltf_write_context* context, const char* label,
 	if (val != def)
 	{
 		cgltf_write_indent(context);
-		fprintf(context->file, "'%s': %d", label, val);
+		fprintf(context->file, "\"%s\": %d", label, val);
 		context->needs_comma = 1;
 	}
 }
@@ -119,7 +119,7 @@ static void cgltf_write_floatprop(cgltf_write_context* context, const char* labe
 	if (val != def)
 	{
 		cgltf_write_indent(context);
-		fprintf(context->file, "'%s': %g", label, val);
+		fprintf(context->file, "\"%s\": %g", label, val);
 		context->needs_comma = 1;
 	}
 }
@@ -129,7 +129,7 @@ static void cgltf_write_boolprop_optional(cgltf_write_context* context, const ch
 	if (val != def)
 	{
 		cgltf_write_indent(context);
-		fprintf(context->file, "'%s': %s", label, val ? "true" : "false");
+		fprintf(context->file, "\"%s\": %s", label, val ? "true" : "false");
 		context->needs_comma = 1;
 	}
 }
@@ -137,7 +137,7 @@ static void cgltf_write_boolprop_optional(cgltf_write_context* context, const ch
 static void cgltf_write_floatarrprop(cgltf_write_context* context, const char* label, const cgltf_float* vals, int dim)
 {
 	cgltf_write_indent(context);
-	fprintf(context->file, "'%s': [", label);
+	fprintf(context->file, "\"%s\": [", label);
 	for (int i = 0; i < dim; ++i)
 	{
 		if (i != 0)
@@ -155,12 +155,12 @@ static void cgltf_write_floatarrprop(cgltf_write_context* context, const char* l
 
 #define cgltf_write_idxprop(label, val, start) if (val) { \
 		cgltf_write_indent(context); \
-		fprintf(context->file, "'%s': %d", label, (int) (val - start)); \
+		fprintf(context->file, "\"%s\": %d", label, (int) (val - start)); \
 		context->needs_comma = 1; }
 
 #define cgltf_write_idxarrprop(label, dim, vals, start) if (vals) { \
 		cgltf_write_indent(context); \
-		fprintf(context->file, "'%s': [", label); \
+		fprintf(context->file, "\"%s\": [", label); \
 		for (int i = 0; i < dim; ++i) { \
 		if (i != 0) fprintf(context->file, ", "); \
 		fprintf(context->file, "%d", (int) (vals[i] - start)); } \
@@ -223,7 +223,7 @@ static int cgltf_dim_from_type(cgltf_type type)
 
 static void cgltf_write_asset(cgltf_write_context* context, const cgltf_asset* asset)
 {
-	cgltf_write_line(context, "'asset': {");
+	cgltf_write_line(context, "\"asset\": {");
 	cgltf_write_strprop(context, "copyright", asset->copyright);
 	cgltf_write_strprop(context, "generator", asset->generator);
 	cgltf_write_strprop(context, "version", asset->version);
@@ -236,7 +236,7 @@ static void cgltf_write_primitive(cgltf_write_context* context, const cgltf_prim
 	cgltf_write_intprop(context, "mode", (int) prim->type, 4);
 	cgltf_write_idxprop("indices", prim->indices, context->data->accessors);
 	cgltf_write_idxprop("material", prim->material, context->data->materials);
-	cgltf_write_line(context, "'attributes': [");
+	cgltf_write_line(context, "\"attributes\": [");
 	for (cgltf_size i = 0; i < prim->attributes_count; ++i)
 	{
 		const cgltf_attribute* attr = prim->attributes + i;
@@ -252,7 +252,7 @@ static void cgltf_write_mesh(cgltf_write_context* context, const cgltf_mesh* mes
 	cgltf_write_line(context, "{");
 	cgltf_write_strprop(context, "name", mesh->name);
 	
-	cgltf_write_line(context, "'primitives': [");
+	cgltf_write_line(context, "\"primitives\": [");
 	for (cgltf_size i = 0; i < mesh->primitives_count; ++i)
 	{
 		cgltf_write_line(context, "{");
@@ -409,21 +409,9 @@ cgltf_result cgltf_write_file(const cgltf_options* options, const char* path, co
 
 	fputs("{", context.file);
 
-	cgltf_write_asset(&context, &data->asset);
-
-	if (data->meshes_count > 0)
-	{
-		cgltf_write_line(&context, "'meshes': [");
-		for (cgltf_size i = 0; i < data->meshes_count; ++i)
-		{
-			cgltf_write_mesh(&context, data->meshes + i);
-		}
-		cgltf_write_line(&context, "]");
-	}
-
 	if (data->accessors_count > 0)
 	{
-		cgltf_write_line(&context, "'accessors': [");
+		cgltf_write_line(&context, "\"accessors\": [");
 		for (cgltf_size i = 0; i < data->accessors_count; ++i)
 		{
 			cgltf_write_accessor(&context, data->accessors + i);
@@ -431,9 +419,11 @@ cgltf_result cgltf_write_file(const cgltf_options* options, const char* path, co
 		cgltf_write_line(&context, "]");
 	}
 
+	cgltf_write_asset(&context, &data->asset);
+
 	if (data->buffer_views_count > 0)
 	{
-		cgltf_write_line(&context, "'bufferViews': [");
+		cgltf_write_line(&context, "\"bufferViews\": [");
 		for (cgltf_size i = 0; i < data->buffer_views_count; ++i)
 		{
 			cgltf_write_buffer_view(&context, data->buffer_views + i);
@@ -443,7 +433,7 @@ cgltf_result cgltf_write_file(const cgltf_options* options, const char* path, co
 
 	if (data->buffers_count > 0)
 	{
-		cgltf_write_line(&context, "'buffers': [");
+		cgltf_write_line(&context, "\"buffers\": [");
 		for (cgltf_size i = 0; i < data->buffers_count; ++i)
 		{
 			cgltf_write_buffer(&context, data->buffers + i);
@@ -451,19 +441,9 @@ cgltf_result cgltf_write_file(const cgltf_options* options, const char* path, co
 		cgltf_write_line(&context, "]");
 	}
 
-	if (data->materials_count > 0)
-	{
-		cgltf_write_line(&context, "'materials': [");
-		for (cgltf_size i = 0; i < data->materials_count; ++i)
-		{
-			cgltf_write_material(&context, data->materials + i);
-		}
-		cgltf_write_line(&context, "]");
-	}
-
 	if (data->images_count > 0)
 	{
-		cgltf_write_line(&context, "'images': [");
+		cgltf_write_line(&context, "\"images\": [");
 		for (cgltf_size i = 0; i < data->images_count; ++i)
 		{
 			cgltf_write_image(&context, data->images + i);
@@ -471,29 +451,29 @@ cgltf_result cgltf_write_file(const cgltf_options* options, const char* path, co
 		cgltf_write_line(&context, "]");
 	}
 
-	if (data->textures_count > 0)
+	if (data->meshes_count > 0)
 	{
-		cgltf_write_line(&context, "'textures': [");
-		for (cgltf_size i = 0; i < data->textures_count; ++i)
+		cgltf_write_line(&context, "\"meshes\": [");
+		for (cgltf_size i = 0; i < data->meshes_count; ++i)
 		{
-			cgltf_write_texture(&context, data->textures + i);
+			cgltf_write_mesh(&context, data->meshes + i);
 		}
 		cgltf_write_line(&context, "]");
 	}
 
-	if (data->samplers_count > 0)
+	if (data->materials_count > 0)
 	{
-		cgltf_write_line(&context, "'samplers': [");
-		for (cgltf_size i = 0; i < data->samplers_count; ++i)
+		cgltf_write_line(&context, "\"materials\": [");
+		for (cgltf_size i = 0; i < data->materials_count; ++i)
 		{
-			cgltf_write_sampler(&context, data->samplers + i);
+			cgltf_write_material(&context, data->materials + i);
 		}
 		cgltf_write_line(&context, "]");
 	}
 
 	if (data->nodes_count > 0)
 	{
-		cgltf_write_line(&context, "'nodes': [");
+		cgltf_write_line(&context, "\"nodes\": [");
 		for (cgltf_size i = 0; i < data->nodes_count; ++i)
 		{
 			cgltf_write_node(&context, data->nodes + i);
@@ -501,9 +481,21 @@ cgltf_result cgltf_write_file(const cgltf_options* options, const char* path, co
 		cgltf_write_line(&context, "]");
 	}
 
+	if (data->samplers_count > 0)
+	{
+		cgltf_write_line(&context, "\"samplers\": [");
+		for (cgltf_size i = 0; i < data->samplers_count; ++i)
+		{
+			cgltf_write_sampler(&context, data->samplers + i);
+		}
+		cgltf_write_line(&context, "]");
+	}
+
+	cgltf_write_intprop(&context, "scene", data->scene - data->scenes, -1);
+
 	if (data->scenes_count > 0)
 	{
-		cgltf_write_line(&context, "'scenes': [");
+		cgltf_write_line(&context, "\"scenes\": [");
 		for (cgltf_size i = 0; i < data->scenes_count; ++i)
 		{
 			cgltf_write_scene(&context, data->scenes + i);
@@ -511,7 +503,15 @@ cgltf_result cgltf_write_file(const cgltf_options* options, const char* path, co
 		cgltf_write_line(&context, "]");
 	}
 
-	cgltf_write_intprop(&context, "scene", data->scene - data->scenes, -1);
+	if (data->textures_count > 0)
+	{
+		cgltf_write_line(&context, "\"textures\": [");
+		for (cgltf_size i = 0; i < data->textures_count; ++i)
+		{
+			cgltf_write_texture(&context, data->textures + i);
+		}
+		cgltf_write_line(&context, "]");
+	}
 
 	// TODO: skins, animations, cameras, extensions
 
